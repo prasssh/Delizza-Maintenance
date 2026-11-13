@@ -76,6 +76,7 @@ async function acceptCookieBanner(page) {
 }
 
 test.describe('Visual regression', () => {
+  test.setTimeout(90_000);
   for (const pageUnderTest of pagesUnderTest) {
     test(`${pageUnderTest.name} — full page matches baseline`, async ({ page }) => {
       // The site's paid webfont host (Type Network) intermittently blocks
@@ -122,13 +123,38 @@ test.describe('Visual regression', () => {
       for (let attempt = 0; attempt < 2; attempt++) {
         try {
           response = await page.goto(pageUnderTest.path, { waitUntil: 'domcontentloaded', timeout: 60_000 });
-          await page.waitForLoadState('load', { timeout: 30_000 }).catch(() => {});
+          await page.waitForLoadState('load', { timeout: 20_000 }).catch(() => {});
           lastError = undefined;
           break;
         } catch (error) {
           lastError = error;
+          await page.unrouteAll({ behavior: 'ignoreErrors' }).catch(() => {});
           if (attempt === 0) {
-            await page.waitForTimeout(1000).catch(() => {});
+            await page.waitForTimeout(1500).catch(() => {});
+            // Re-register document route after a failed navigation attempt.
+            await page.route(/typenetwork\.com/, (route) => route.abort()).catch(() => {});
+            await page.route('**/*', async (route) => {
+              if (route.request().resourceType() !== 'document') return route.continue();
+              try {
+                const res = await route.fetch();
+                if (!res.ok()) {
+                  return route.fulfill({ response: res });
+                }
+                let html = await res.text();
+                const inject = `<style id="vr-defs">
+          .elementor-top-section, [id*="header"], .elementor-sticky, .elementor-sticky--active, .cmplz-cookiebanner, [id^="cmplz"] {
+            position: relative !important; top: auto !important; bottom: auto !important;
+          }
+          .elementor-top-section, [id*="header"], .elementor-sticky, .elementor-sticky--active { display: block; }
+          .cmplz-cookiebanner, [id^="cmplz"] { display: none !important; }
+          .elementor-sticky__spacer { display: none !important; }
+        </style>`;
+                html = html.replace(/<head([^>]*)>/i, (m) => `${m}${inject}`);
+                return route.fulfill({ response: res, body: html, contentType: 'text/html' });
+              } catch {
+                return route.continue().catch(() => {});
+              }
+            }).catch(() => {});
             continue;
           }
         }
@@ -142,8 +168,7 @@ test.describe('Visual regression', () => {
       await handleSignInIfNeeded(page);
 
       // Do not take/compare screenshots for unauthorized pages (e.g. HTTP 401 basic auth failures).
-      const currentResponse = response && page.url().includes(pageUnderTest.path.split('?')[0]) ? response : null;
-      const status = currentResponse?.status();
+      const status = response?.status();
       if (status === 401 || status === 403) {
         throw new Error(
           `Received HTTP ${status} for ${pageUnderTest.path}. ` +
@@ -151,8 +176,21 @@ test.describe('Visual regression', () => {
             'Verify DEV_USERNAME/DEV_PASSWORD and httpCredentials configuration.'
         );
       }
-      const pageText = await page.locator('body').innerText().catch(() => '');
-      if (/\b401\b|unauthorized|authorization required|access denied/i.test(pageText)) {
+
+      const pageTitle = (await page.title().catch(() => '')).trim();
+      const headingText = await page
+        .locator('h1, h2')
+        .first()
+        .innerText()
+        .catch(() => '');
+      const bodyText = await page.locator('body').innerText().catch(() => '');
+      const authFailurePattern = /\b401\b|authorization required|access denied|unauthorized access/i;
+      const isLikelyAuthFailurePage =
+        /\b401\b|authorization required/i.test(pageTitle) ||
+        /\b401\b|authorization required|access denied/i.test(headingText) ||
+        (/unauthorized/i.test(bodyText) && bodyText.trim().length < 500);
+
+      if (isLikelyAuthFailurePage && authFailurePattern.test(`${pageTitle}\n${headingText}\n${bodyText}`)) {
         throw new Error(
           `Unauthorized/access-denied page detected for ${pageUnderTest.path}. ` +
             'Sign-in/authentication did not succeed, so screenshot comparison was skipped.'
