@@ -20,9 +20,15 @@ export const pagesUnderTest = [
   { name: 'belgian-gluten-free-mini-cream-puffs-18ct', path: '/belgian_gluten_free_mini_cream_puffs_18ct', hasLeadspaceVideo: false },
   { name: 'belgian-gluten-free-mini-eclairs-15ct', path: '/belgian_gluten_free_mini_eclairs_15ct', hasLeadspaceVideo: false },
   { name: 'where-to-buy', path: '/where_to_buy', hasLeadspaceVideo: false },
+<<<<<<< HEAD
   { name: 'recipes', path: '/recipes', hasLeadspaceVideo: true },
   { name: 'cookie-policy', path: '/cookie_policy', hasLeadspaceVideo: false },
   { name: 'foodservice', path: '/foodservice', hasLeadspaceVideo: true },
+=======
+  { name: 'recipes', path: '/recipes', hasLeadspaceVideo: false },
+  { name: 'cookie-policy', path: '/cookie_policy', hasLeadspaceVideo: false },
+  { name: 'foodservice', path: '/foodservice', hasLeadspaceVideo: false },
+>>>>>>> 5f271be4c4e02388adf80a41220d1989c77d2ed4
   { name: 'contact-us', path: '/contact_us', hasLeadspaceVideo: false },
   { name: 'privacy-policy', path: '/privacy_policy', hasLeadspaceVideo: false },
   { name: 'news', path: '/news', hasLeadspaceVideo: false },
@@ -30,6 +36,10 @@ export const pagesUnderTest = [
   { name: 'terms-of-use', path: '/terms_of_use', hasLeadspaceVideo: false },
   { name: 'do-not-sell', path: '/do_not_sell', hasLeadspaceVideo: false },
   { name: 'mini-filled-donuts-assortment-32ct', path: '/mini_filled_donuts_assortment_32ct', hasLeadspaceVideo: false },
+<<<<<<< HEAD
+=======
+  { name: 'frozen-desserts-deliver-convenience', path: '/docs/frozen_desserts_deliver_convenience.pdf', hasLeadspaceVideo: false },
+>>>>>>> 5f271be4c4e02388adf80a41220d1989c77d2ed4
   { name: 'macarons-36ct', path: '/macarons_36ct', hasLeadspaceVideo: false },
   { name: 'macarons-240ct', path: '/macarons_240ct', hasLeadspaceVideo: false },
   { name: 'macarons-chocolate-36ct', path: '/macarons_chocolate_36ct', hasLeadspaceVideo: false },
